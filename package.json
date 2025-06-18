@@ -21,9 +21,10 @@
     "express-session": "^1.18.1",
     "http-proxy-middleware": "^3.0.5",
     "memoizee": "^0.4.17",
-    "openid-client": "^4.9.1",
+    "openid-client": "^6.5.1",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
+    "passport-openid-connect": "^0.1.0",
     "ws": "^8.18.2",
     "zod": "^3.25.67"
   },

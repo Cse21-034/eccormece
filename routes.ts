@@ -11,6 +11,21 @@ import {
 } from "./shared/schema";
 import { z } from "zod";
 
+// Helper function to properly handle images data
+function processImagesData(images: any): string[] | null {
+  if (!images) return null;
+  if (Array.isArray(images)) return images;
+  if (typeof images === 'string') {
+    try {
+      const parsed = JSON.parse(images);
+      return Array.isArray(parsed) ? parsed : [images];
+    } catch {
+      return [images];
+    }
+  }
+  return null;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
@@ -97,11 +112,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Admin access required" });
       }
 
-      const validatedData = insertProductSchema.parse(req.body);
+      // Process the images data properly
+      const processedData = {
+        ...req.body,
+        images: processImagesData(req.body.images)
+      };
+
+      const validatedData = insertProductSchema.parse(processedData);
       const product = await storage.createProduct(validatedData);
       res.json(product);
     } catch (error) {
       console.error("Error creating product:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
       res.status(500).json({ message: "Failed to create product" });
     }
   });
@@ -114,11 +141,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const id = parseInt(req.params.id);
-      const validatedData = insertProductSchema.partial().parse(req.body);
+      
+      // Process the images data properly for updates
+      const processedData = {
+        ...req.body,
+        images: req.body.images !== undefined ? processImagesData(req.body.images) : undefined
+      };
+
+      const validatedData = insertProductSchema.partial().parse(processedData);
       const product = await storage.updateProduct(id, validatedData);
       res.json(product);
     } catch (error) {
       console.error("Error updating product:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
       res.status(500).json({ message: "Failed to update product" });
     }
   });
@@ -169,6 +209,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(item);
     } catch (error) {
       console.error("Error adding to cart:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
       res.status(500).json({ message: "Failed to add to cart" });
     }
   });
@@ -236,6 +282,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(order);
     } catch (error) {
       console.error("Error creating order:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
       res.status(500).json({ message: "Failed to create order" });
     }
   });
@@ -257,6 +309,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/orders/:id', isAuthenticated, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid order ID" });
+      }
+
       const order = await storage.getOrder(id);
       
       if (!order) {
@@ -286,6 +343,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(message);
     } catch (error) {
       console.error("Error creating contact message:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
       res.status(500).json({ message: "Failed to send message" });
     }
   });
