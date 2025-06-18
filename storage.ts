@@ -20,7 +20,7 @@ import {
   type InsertCartItem,
   type ContactMessage,
   type InsertContactMessage,
-} from "@shared/schema";
+} from "./shared/schema";
 import { db } from "./db";
 import { eq, desc, and, like, gte, lte, inArray } from "drizzle-orm";
 
